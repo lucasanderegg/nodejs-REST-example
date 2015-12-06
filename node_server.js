@@ -8,9 +8,9 @@ var js2xml = require('js2xmlparser');
 var client_html = fs.readFileSync('./public/client.html', 'utf8');
 var client_script = fs.readFileSync('./public/REST_client.js', 'utf8');
 
-data.addresses.push({id:1, prename:'Lucas', familyname:'Anderegg', street:'Weiherallee 5', city:'Uster', country:'CH'});
-data.addresses.push({id:2, prename:'Red', familyname:'Reddington', street:'Weiherallee 5', city:'Uster', country:'CH'});
-data.addresses.push({id:3, prename:'Jacob', familyname:'Phelps', street:'Weiherallee 5', city:'Uster', country:'CH'});
+data.addresses.push({id:1, prename:'Samar', familyname:'Navabi', street:'Street 1', city:'Vilnius', country:'LT'});
+data.addresses.push({id:2, prename:'Raymond', familyname:'Reddington', street:'Bakerstreet 2', city:'Seattle', country:'USA'});
+data.addresses.push({id:3, prename:'Jacob', familyname:'Phelps', street:'Street 3', city:'Askaban', country:'??'});
 
 var connection_count = 0;
 
@@ -48,15 +48,7 @@ var server = http.createServer(function(request, response){
 			switch (request.method) {
 				case 'GET':
 					console.log('in GET of addresses');
-					if (identifier == null || parameters == null) {
-						console.log('in addresses ' + JSON.stringify(data.addresses));
-						sendResponse(response, '200', 'text/plain', JSON.stringify(data.addresses));
-					}else if(identifier != null){
-						console.log('in identifer ' + JSON.stringify(data.getId(identifier)));
-						sendResponse(response, '200', 'text/plain', JSON.stringify(data.getId(identifier)));
-					}else if (parameters != null) {
-						sendResponse(response, '200', 'text/plain', JSON.stringify(data.filter(parameters.attribute, parameters.value)));
-					}
+					handleGetRequest(response, resource, identifier, parameters, requestedDataFormat);
 					break;
 					
 				case 'POST':
@@ -142,47 +134,31 @@ function handleGetRequest(response, resource, identifier, parameters, requestedD
 		sendFormatedData(response, requestedDataFormat, data[resource.toString()]);
 	}else if(identifier != null){
 		console.log('in identifer ' + JSON.stringify(data.getId(identifier)));
-		sendResponse(response, '200', 'text/plain', JSON.stringify(data.getId(identifier)));
 		sendFormatedData(response, requestedDataFormat, data.getId(identifier));
 	}else if (parameters != null) {
-		sendResponse(response, '200', 'text/plain', JSON.stringify(data.filter(parameters.attribute, parameters.value)));
+		sendFormatedData(response, requestedDataFormat, data.filter(parameters.attribute, parameters.value));
 	}
-	
-	if (requestedDataFormat.dataFormat == 'text/XML') {
-		
-	}else if (requestedDataFormat.dataFormat == 'text/JSON') {
-		
-	}else if (requestedDataFormat.dataFormat == 'text/plain') {
-		
-	}else if (requestedDataFormat.dataFormat == 'application/JSON') {
-		
-	}else if (requestedDataFormat.dataFormat == 'application/XML') {
-		
-	}else {
-		sendResponse(response, '406', 'text/plain', 'data format not supported');
-	}
-	response.writeHead(statusCode, {'Content-Length': Buffer.byteLength(body), 'Content-Type': + contentType});
-	response.write(body);
-	response.end();
 }
 
-function sendFormatedData(response, resource, identifier, parameters, requestedDataFormat) {
-	if (requestedDataFormat.dataFormat == 'text/XML') {
-		
-	}else if (requestedDataFormat.dataFormat == 'text/JSON') {
-		
+function sendFormatedData(response, requestedDataFormat, data) {
+	if (requestedDataFormat.dataFormat == 'text/xml') {
+		var jsonData = JSON.stringify(data);
+		var xmlData = js2xml('address', jsonData);
+		xmlData = JSON.stringify(xmlData);
+		sendResponse(response, '200', 'text/xml', xmlData);
+	}else if (requestedDataFormat.dataFormat == 'text/json') {
+		var jsonData = JSON.stringify(data);
+		console.log(jsonData);
+		sendResponse(response, '200', 'text/json', jsonData);
 	}else if (requestedDataFormat.dataFormat == 'text/plain') {
+		sendResponse(response, '406', 'text/plain', 'data format not supported');
+	}else if (requestedDataFormat.dataFormat == 'application/json') {
 		
-	}else if (requestedDataFormat.dataFormat == 'application/JSON') {
-		
-	}else if (requestedDataFormat.dataFormat == 'application/XML') {
+	}else if (requestedDataFormat.dataFormat == 'application/xml') {
 		
 	}else {
 		sendResponse(response, '406', 'text/plain', 'data format not supported');
 	}
-	response.writeHead(statusCode, {'Content-Length': Buffer.byteLength(body), 'Content-Type': + contentType});
-	response.write(body);
-	response.end();
 }
 
 
