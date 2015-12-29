@@ -1,12 +1,24 @@
-// rest webserver 
+// rest webserver
+
+// required modules
+var https = require('https');
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
 var data = require('./data.js').data;
 var js2xml = require('js2xmlparser');
+var zlib = require('zlib');
 
+
+// required informations
 var client_html = fs.readFileSync('./public/client.html', 'utf8');
 var client_script = fs.readFileSync('./public/REST_client.js', 'utf8');
+var tlsOptions = {
+   key  : fs.readFileSync('./tls/server.key'), // private key
+   cert : fs.readFileSync('./tls/server.crt'),  // public certificate
+   //requestCert: false,
+   //rejectUnauthorized: false
+};
 
 data.addresses.push({id:1, prename:'Samar', familyname:'Navabi', street:'Street 1', city:'Vilnius', country:'LT'});
 data.addresses.push({id:2, prename:'Raymond', familyname:'Reddington', street:'Bakerstreet 2', city:'Seattle', country:'USA'});
@@ -14,7 +26,7 @@ data.addresses.push({id:3, prename:'Jacob', familyname:'Phelps', street:'Street 
 
 var connection_count = 0;
 
-var server = http.createServer(function(request, response){
+var server = https.createServer(tlsOptions, function(request, response){
 	connection_count++;
 	console.log('Connection');
 	var httpMethod = request.method;
@@ -142,25 +154,53 @@ function handleGetRequest(response, resource, identifier, parameters, requestedD
 
 function sendFormatedData(response, requestedDataFormat, data) {
 	if (requestedDataFormat.dataFormat == 'text/xml') {
-		var jsonData = JSON.stringify(data);
-		var xmlData = js2xml('address', jsonData);
-		xmlData = JSON.stringify(xmlData);
+		xmlData = createXmlString(data);
 		sendResponse(response, '200', 'text/xml', xmlData);
 	}else if (requestedDataFormat.dataFormat == 'text/json') {
-		var jsonData = JSON.stringify(data);
-		console.log(jsonData);
+		var jsonData = createJsonString(data);
 		sendResponse(response, '200', 'text/json', jsonData);
 	}else if (requestedDataFormat.dataFormat == 'text/plain') {
 		sendResponse(response, '406', 'text/plain', 'data format not supported');
 	}else if (requestedDataFormat.dataFormat == 'application/json') {
-		
+		if (requestedDataFormat.dataEncoding == 'gzip') {
+			console.log('in gzip');
+			var jsonData = createJsonString(data);
+			//var compressed = zlib.gzipSync(jsonData);
+			var compressed = zlib.gzip(jsonData, function (err, encoded) {
+				console.log('error happen while compressing  ' + encoded + err);
+				response.writeHead(200, {'Content-Length': Buffer.byteLength(encoded), 'Content-Type':'application/json', 'Content-Encoding':'gzip'});
+				response.write(encoded);
+				response.end();
+			});
+			console.log('after zip var compressed is : ' + compressed + '    and var jsonData is : ' + jsonData);
+			//response.setHeader('Content-Encoding', 'gzip');
+			//sendResponse(response, '200', 'application/json', compressed);
+//			response.writeHead(200, {'Content-Length': Buffer.byteLength(compressed), 'Content-Type':'application/json', 'Content-Encoding':'gzip'});
+//			response.write(compressed);
+//			response.end();
+		} else {
+			sendResponse(response, '406', 'text/plain', 'data format not supported');
+		}
 	}else if (requestedDataFormat.dataFormat == 'application/xml') {
-		
+		if (requestedDataFormat.dataEncoding == 'gzip') {
+					
+		} else {
+			sendResponse(response, '406', 'text/plain', 'data format not supported');
+		}
 	}else {
 		sendResponse(response, '406', 'text/plain', 'data format not supported');
 	}
 }
 
+
+function createJsonString(data) {
+	return JSON.stringify(data);
+}
+
+function createXmlString(data) {
+	var xmlData = js2xml('address', createJsonString(data));
+	xmlData = JSON.stringify(xmlData);
+}
 
 
 
