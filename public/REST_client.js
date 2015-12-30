@@ -11,6 +11,7 @@ function sendRestGetRequest1() {
 	
 	restGetRequest1.open ('get',"/addresses", true);
 	restGetRequest1.setRequestHeader("Authorization", "Basic " + btoa("red:red"));
+	restGetRequest1.setRequestHeader("Accept", "text/json");
 	restGetRequest1.onreadystatechange = function () {
 		document.getElementById("chatwindow").value = restGetRequest1.responseText;
 	}
@@ -19,6 +20,8 @@ function sendRestGetRequest1() {
 
 function sendRestGetRequest2() {
 	restGetRequest2.open ('get',"/addresses/2", true);
+	restGetRequest2.setRequestHeader("Authorization", "Basic " + btoa("red:red"));
+	restGetRequest2.setRequestHeader("Accept", "text/json");
 	restGetRequest2.onreadystatechange = function () {
 		document.getElementById("chatwindow").value = restGetRequest2.responseText;
 	}
